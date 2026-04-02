@@ -457,7 +457,7 @@ const getVersionData = (
   analysis: Analysis,
   version: AnalysisVersion | null,
 ): VersionData => {
-  const source = version ?? analysis.versions[0];
+  const source = version ?? analysis.versions[analysis.versions.length - 1];
   return {
     jobDescription: source.jobDescription,
     resumeText: source.resumeText,
