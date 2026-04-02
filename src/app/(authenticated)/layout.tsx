@@ -2,10 +2,10 @@ import Header from "@/components/header";
 
 const AuthenticatedLayout = ({ children }: { children: React.ReactNode }) => {
   return (
-    <>
+    <div className="min-h-screen bg-background">
       <Header />
-      <main className="flex-1 p-6">{children}</main>
-    </>
+      <main className="mx-auto max-w-5xl px-8 py-10">{children}</main>
+    </div>
   );
 };
 
