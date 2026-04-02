@@ -1,143 +1,81 @@
 "use client";
 
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { createAnalysis } from "@/lib/api";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
-import { z } from "zod/v4";
-
-const analysisSchema = z.object({
-  jobDescription: z
-    .string()
-    .min(10, "Job description must be at least 10 characters"),
-  resumeText: z.string().min(10, "Resume must be at least 10 characters"),
-  companyName: z.string().optional(),
-  jobPosition: z.string().optional(),
-});
-
-type AnalysisForm = z.infer<typeof analysisSchema>;
+import { fetchProfile } from "@/lib/api";
+import { PlusIcon, ClockIcon } from "@heroicons/react/24/outline";
+import { useEffect, useState } from "react";
 
 const Home = () => {
-  const router = useRouter();
+  const [username, setUsername] = useState<string | null>(null);
+  const [loaded, setLoaded] = useState(false);
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<AnalysisForm>({
-    resolver: zodResolver(analysisSchema),
-  });
-
-  const mutation = useMutation({
-    mutationFn: createAnalysis,
-    onSuccess: (data) => {
-      router.push(`/analyses/${data.id}`);
-    },
-  });
-
-  const onSubmit = (data: AnalysisForm) => {
-    mutation.mutate({
-      jobDescription: data.jobDescription,
-      resumeText: data.resumeText,
-      companyName: data.companyName || "",
-      jobPosition: data.jobPosition || "",
-    });
-  };
+  useEffect(() => {
+    fetchProfile()
+      .then((profile) => setUsername(profile.username))
+      .catch(() => {})
+      .finally(() => setLoaded(true));
+  }, []);
 
   return (
-    <div className="mx-auto w-full max-w-4xl">
-      <Card>
-        <CardHeader>
-          <CardTitle>New Analysis</CardTitle>
-          <CardDescription>
-            Paste a job description and your resume to get optimization
-            suggestions
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label htmlFor="companyName" className="text-sm font-medium">
-                  Company Name
-                </label>
-                <Input
-                  id="companyName"
-                  placeholder="e.g. Google"
-                  {...register("companyName")}
-                />
-              </div>
-              <div className="space-y-2">
-                <label htmlFor="jobPosition" className="text-sm font-medium">
-                  Job Position
-                </label>
-                <Input
-                  id="jobPosition"
-                  placeholder="e.g. Software Engineer"
-                  {...register("jobPosition")}
-                />
-              </div>
-            </div>
+    <div className="space-y-8">
+      <section className="card-surface reveal-up px-6 py-9 sm:px-8 sm:py-10">
+        <h1 className="text-3xl font-black tracking-tight text-foreground sm:text-4xl md:whitespace-nowrap">
+          {!loaded
+            ? "\u00A0"
+            : username
+              ? `Welcome back, ${username}!`
+              : "Make Your Resume Match the Job."}
+        </h1>
+        <p className="mt-4 max-w-3xl text-sm leading-relaxed text-muted-foreground sm:text-base">
+          Paste a job description and your resume to see match score, missing
+          skills, and rewrite suggestions you can apply immediately.
+        </p>
 
-            <div className="space-y-2">
-              <label htmlFor="jobDescription" className="text-sm font-medium">
-                Job Description *
-              </label>
-              <Textarea
-                id="jobDescription"
-                placeholder="Paste the job description here..."
-                rows={8}
-                {...register("jobDescription")}
-              />
-              {errors.jobDescription && (
-                <p className="text-sm text-red-500">
-                  {errors.jobDescription.message}
-                </p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <label htmlFor="resumeText" className="text-sm font-medium">
-                Resume *
-              </label>
-              <Textarea
-                id="resumeText"
-                placeholder="Paste your resume text here..."
-                rows={8}
-                {...register("resumeText")}
-              />
-              {errors.resumeText && (
-                <p className="text-sm text-red-500">
-                  {errors.resumeText.message}
-                </p>
-              )}
-            </div>
-
-            {mutation.error && (
-              <p className="text-sm text-red-500">{mutation.error.message}</p>
-            )}
-
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={mutation.isPending}
-            >
-              {mutation.isPending ? "Analyzing..." : "Analyze"}
+        <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+          <Link href="/new">
+            <Button size="lg" className="w-full sm:w-auto">
+              <PlusIcon className="size-4" />
+              Start Analyzing
             </Button>
-          </form>
-        </CardContent>
-      </Card>
+          </Link>
+          <Link href="/analyses">
+            <Button
+              variant="outline"
+              size="lg"
+              className="w-full border-transparent bg-slate-200 text-slate-800 hover:bg-slate-300 sm:w-auto"
+            >
+              <ClockIcon className="size-4" />
+              View History
+            </Button>
+          </Link>
+        </div>
+      </section>
+
+      <section className="grid gap-4 md:grid-cols-3">
+        <article className="card-surface p-5">
+          <p className="text-sm font-semibold text-foreground">1. Compare</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Analyze your resume directly against the target job posting.
+          </p>
+        </article>
+        <article className="card-surface p-5">
+          <p className="text-sm font-semibold text-foreground">
+            2. Identify Gaps
+          </p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            See missing keywords and skill mismatches at a glance.
+          </p>
+        </article>
+        <article className="card-surface p-5">
+          <p className="text-sm font-semibold text-foreground">
+            3. Rewrite Fast
+          </p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Apply concrete rewrite suggestions to improve interview readiness.
+          </p>
+        </article>
+      </section>
     </div>
   );
 };
