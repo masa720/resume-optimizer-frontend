@@ -16,6 +16,11 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Resume Optimizer",
   description: "Optimize your resume for job applications",
+  icons: {
+    icon: "/favicon.svg",
+    shortcut: "/favicon.svg",
+    apple: "/favicon.svg",
+  },
 };
 
 const RootLayout = ({ children }: Readonly<{ children: React.ReactNode }>) => {
@@ -24,7 +29,7 @@ const RootLayout = ({ children }: Readonly<{ children: React.ReactNode }>) => {
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">
+      <body className="min-h-full">
         <Providers>{children}</Providers>
       </body>
     </html>
