@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { createClient } from "@/lib/supabase/client";
+import { updateProfile } from "@/lib/api";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -10,14 +11,21 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod/v4";
 
-const loginSchema = z.object({
-  email: z.string().email("Invalid email address"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
-});
+const signupSchema = z
+  .object({
+    username: z.string().min(1, "Username is required"),
+    email: z.string().email("Invalid email address"),
+    password: z.string().min(6, "Password must be at least 6 characters"),
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
+  });
 
-type LoginForm = z.infer<typeof loginSchema>;
+type SignupForm = z.infer<typeof signupSchema>;
 
-const LoginPage = () => {
+const SignupPage = () => {
   const router = useRouter();
   const [serverError, setServerError] = useState("");
 
@@ -25,15 +33,15 @@ const LoginPage = () => {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm<LoginForm>({
-    resolver: zodResolver(loginSchema),
+  } = useForm<SignupForm>({
+    resolver: zodResolver(signupSchema),
   });
 
-  const onSubmit = async (data: LoginForm) => {
+  const onSubmit = async (data: SignupForm) => {
     setServerError("");
 
     const supabase = createClient();
-    const { error } = await supabase.auth.signInWithPassword({
+    const { error } = await supabase.auth.signUp({
       email: data.email,
       password: data.password,
     });
@@ -41,6 +49,12 @@ const LoginPage = () => {
     if (error) {
       setServerError(error.message);
       return;
+    }
+
+    try {
+      await updateProfile(data.username);
+    } catch {
+      // Profile save failed — user can set it later
     }
 
     router.push("/");
@@ -57,14 +71,34 @@ const LoginPage = () => {
               </span>
             </div>
             <h1 className="text-[22px] font-semibold tracking-tight text-foreground">
-              Welcome back
+              Create an account
             </h1>
             <p className="mt-1.5 text-[13px] text-muted-foreground">
-              Sign in to Resume Optimizer
+              Get started with Resume Optimizer
             </p>
           </div>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <div className="space-y-1.5">
+              <label
+                htmlFor="username"
+                className="text-[13px] font-medium text-foreground"
+              >
+                Username
+              </label>
+              <Input
+                id="username"
+                type="text"
+                placeholder="johndoe"
+                className="h-10"
+                {...register("username")}
+              />
+              {errors.username && (
+                <p className="text-[13px] text-destructive">
+                  {errors.username.message}
+                </p>
+              )}
+            </div>
             <div className="space-y-1.5">
               <label
                 htmlFor="email"
@@ -105,6 +139,26 @@ const LoginPage = () => {
                 </p>
               )}
             </div>
+            <div className="space-y-1.5">
+              <label
+                htmlFor="confirmPassword"
+                className="text-[13px] font-medium text-foreground"
+              >
+                Confirm Password
+              </label>
+              <Input
+                id="confirmPassword"
+                type="password"
+                placeholder="••••••••"
+                className="h-10"
+                {...register("confirmPassword")}
+              />
+              {errors.confirmPassword && (
+                <p className="text-[13px] text-destructive">
+                  {errors.confirmPassword.message}
+                </p>
+              )}
+            </div>
 
             {serverError && (
               <div className="rounded-2xl bg-destructive/10 px-3 py-2.5 text-[13px] text-destructive">
@@ -117,17 +171,17 @@ const LoginPage = () => {
               className="h-10 w-full text-[13px]"
               disabled={isSubmitting}
             >
-              {isSubmitting ? "Signing in..." : "Sign in"}
+              {isSubmitting ? "Creating account..." : "Create account"}
             </Button>
           </form>
 
           <p className="mt-6 text-center text-[13px] text-muted-foreground">
-            Don&apos;t have an account?{" "}
+            Already have an account?{" "}
             <Link
-              href="/signup"
+              href="/login"
               className="font-medium text-primary hover:underline"
             >
-              Sign up
+              Sign in
             </Link>
           </p>
         </div>
@@ -144,7 +198,7 @@ const LoginPage = () => {
               className="text-primary"
             >
               <path
-                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                d="M12 4.5v15m7.5-7.5h-15"
                 stroke="currentColor"
                 strokeWidth="1.5"
                 strokeLinecap="round"
@@ -153,12 +207,12 @@ const LoginPage = () => {
             </svg>
           </div>
           <h2 className="text-xl font-semibold tracking-tight">
-            Optimize your resume for any job
+            Start optimizing in seconds
           </h2>
           <p className="text-[14px] leading-relaxed text-muted-foreground">
-            Get instant feedback on how well your resume matches a job
-            description. Identify missing keywords, improve your sections, and
-            land more interviews.
+            Paste a job description and your resume to get instant, actionable
+            feedback. Our analysis helps you tailor your resume for maximum
+            impact.
           </p>
         </div>
       </div>
@@ -166,4 +220,4 @@ const LoginPage = () => {
   );
 };
 
-export default LoginPage;
+export default SignupPage;
